@@ -1,0 +1,105 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+# unsharnatt rockylinux
+
+ENV['VAGRANT_NO_PARALLEL'] = 'yes'
+
+VAGRANT_BOX         = "rockylinux/8"
+VAGRANT_BOX_VERSION = "5.0.0"
+
+# *** IP addresses that could be used for private networks like that ***
+# 10/8 (10.0.0.0 through 10.255.255.255)
+# 172.16/12 (172.16.0.0 through 172.31.255.255)
+# 192.168/16 (192.168.0.0 through 192.168.255.255)
+NETWORK_PORTION  = "172.16.160"
+MASTER_NODE_CPU    = 2
+MASTER_NODE_MEMORY = 2048
+MASTER_NODE_DISK   = 20
+
+WORKER_NODE_CPUS    = 2
+WORKER_NODE_MEMORY  = 1024
+WORKER_NODE_DISK    = 20
+WORKER_NODES_COUNT  = 2
+
+
+
+Vagrant.configure(2) do |config|
+
+  # config.vm.provision "shell", path: "bootstrap.sh"
+
+  # Kubernetes Master Server
+  config.vm.define "kmaster" do |kmaster|
+    kmaster.vm.box               = VAGRANT_BOX
+    kmaster.vm.box_check_update  = false
+    kmaster.vm.box_version       = VAGRANT_BOX_VERSION
+
+    kmaster.vm.hostname = "kmaster.something.com"
+    kmaster.vm.network "private_network", ip: "#{NETWORK_PORTION}.100"
+    
+    kmaster.vm.provider :virtualbox do |v|
+      v.name   = "kmaster"
+      v.memory = MASTER_NODE_MEMORY
+      v.cpus   = MASTER_NODE_CPU
+    end
+
+    kmaster.vm.provider :libvirt do |v|
+      v.nested  = true
+      v.memory  = MASTER_NODE_MEMORY
+      v.cpus    = MASTER_NODE_CPU
+      v.machine_virtual_size = MASTER_NODE_DISK
+      end
+      
+    kmaster.vm.provision "shell", inline: <<-SHELL
+      dnf install -y cloud-utils-growpart
+      growpart /dev/vda 1
+      xfs_growfs /dev/vda1
+    SHELL
+
+    kmaster.vm.synced_folder ".", "/vagrant",
+      type: "nfs",
+      nfs_version: 4,
+      nfs_udp: false
+
+    # kmaster.vm.provision "shell", path: "bootstrap_kmaster.sh"
+  end
+
+
+
+  # Kubernetes Worker Nodes
+  (1..WORKER_NODES_COUNT).each do |i|
+    config.vm.define "kworker#{i}" do |workernode|
+      workernode.vm.box               = VAGRANT_BOX
+      workernode.vm.box_check_update  = false
+      workernode.vm.box_version       = VAGRANT_BOX_VERSION
+
+      workernode.vm.hostname = "kworker#{i}.something.com"
+      workernode.vm.network "private_network", ip: "#{NETWORK_PORTION}.10#{i}"
+
+      workernode.vm.provider :virtualbox do |v|
+        v.name   = "kworker#{i}"
+        v.memory = WORKER_NODE_MEMORY
+        v.cpus   = WORKER_NODE_CPUS
+      end
+
+      workernode.vm.provider :libvirt do |v|
+        v.nested  = true
+        v.memory  = WORKER_NODE_MEMORY
+        v.cpus    = WORKER_NODE_CPUS
+        v.machine_virtual_size = WORKER_NODE_DISK
+      end
+      
+      workernode.vm.provision "shell", inline: <<-SHELL
+        dnf install -y cloud-utils-growpart
+        growpart /dev/vda 1
+        xfs_growfs /dev/vda1
+      SHELL
+
+      workernode.vm.synced_folder ".", "/vagrant",
+        type: "nfs",
+        nfs_version: 4,
+        nfs_udp: false
+      # workernode.vm.provision "shell", path: "bootstrap_kworker.sh"
+    end
+  end
+
+end
