@@ -1,0 +1,9 @@
+[kmaster]
+192.168.121.125
+
+[kworker]
+192.168.121.118
+
+[misc:childen]
+kmaster
+kworker

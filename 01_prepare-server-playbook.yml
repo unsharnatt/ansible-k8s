@@ -1,0 +1,119 @@
+---
+# ansible-playbook -i ./hosts  deploy-k8s-playbook.yml --extra-vars "my_hosts=ip.of.master.node"
+- name: test01 playbook
+#  hosts: 192.168.121.155
+  hosts: "{{my_hosts}}"
+  remote_user: root
+  # root access
+  become: yes  
+
+  #vars:
+#    service_port: 8080
+#    log_path: "/var/log" 
+
+  # vars_files:
+  # - vars_ansiblefile.yml
+
+  tasks:
+  - name: Update Red Hat Linux
+    yum:
+      name: "*"
+      state: latest
+      update_cache: yes
+    # when: ansible_os_family == "RedHat"
+
+  - name: install socat
+    yum: name=socat state=latest
+
+  - name: install conntrack
+    yum: name=conntrack state=latest
+
+  
+  - name: add containerd.conf 
+    shell: |
+      tee /etc/modules-load.d/containerd.conf <<EOF
+      overlay
+      br_netfilter
+      EOF
+
+
+  - name: setting to load containerd on server start up
+    shell: |
+      modprobe overlay
+      modprobe br_netfilter      
+
+
+  - name: setting k8s network
+    shell: |
+      tee /etc/sysctl.d/kubernetes.conf<<EOF
+      net.bridge.bridge-nf-call-ip6tables = 1
+      net.bridge.bridge-nf-call-iptables = 1
+      net.ipv4.ip_forward = 1
+      EOF
+  
+
+  - name: reload setting
+    shell: sysctl --system
+
+
+  - name: Install required packages
+    yum: 
+      name: '{{item}}'
+      state: latest
+      update_cache: yes
+    with_items:
+      - yum-utils 
+      - device-mapper-persistent-data 
+      - lvm2
+
+
+  - name: Add Docker repo
+    shell: yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+
+an
+  - name: Install Containerd
+    yum:
+      name: containerd.io
+      state: latest
+      update_cache: yes
+
+  - name: config containerd 
+    shell: |
+      mkdir -p /etc/containerd
+      containerd config default > /etc/containerd/config.toml
+
+  - name: enable and start ContainerD service
+    shell: |
+      systemctl restart containerd
+      systemctl enable containerd
+
+
+#     1  curl -sfL https://get-kk.kubesphere.io | VERSION=v3.0.2 sh -
+#     2  mv kk /usr/local/bin/
+#     3  kk --version
+#     4  kk create config
+#     5  ll
+#     6  vim config-sample.yaml 
+#     7  dnf install vim -y
+#     8  vim test
+#     9  vim config-sample.yaml 
+#    10  kk create cluster -f config-sample.yaml
+#    11  kubectl get nodes
+#    12  kubectl get pod -A
+#    13  kubectl get all -A      
+  
+# yum install -y yum-utils device-mapper-persistent-data lvm2 >/dev/null 2>&1
+
+# Add Docker repo: yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+
+# Install containerd : yum update -y && yum install -y containerd.io >/dev/null 2>&1
+
+# Configure containerd and start service
+# mkdir -p /etc/containerd
+# containerd config default > /etc/containerd/config.toml
+
+# restart containerd
+# systemctl restart containerd
+# systemctl enable containerd
+
+  

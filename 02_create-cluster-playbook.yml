@@ -1,0 +1,73 @@
+- name: test01 playbook
+#  hosts: 192.168.121.155
+  hosts: "{{my_hosts}}"
+  remote_user: vagrant
+  # root access
+  become: yes  
+
+  #vars:
+#    service_port: 8080
+#    log_path: "/var/log" 
+
+  # vars_files:
+  # - vars_ansiblefile.yml
+
+  tasks:
+  # - name: Update Red Hat Linux
+  #   yum:
+  #     name: "*"
+  #     state: latest
+  #     update_cache: yes
+    # when: ansible_os_family == "RedHat"
+  - name: download kubekey 
+    shell: curl -sfL https://get-kk.kubesphere.io | VERSION=v3.0.2 sh -
+    when: 1 != 1
+
+  - name: install kubekey
+    shell: |
+      id
+      mv kk /usr/local/bin/
+      chmod +x /usr/local/bin/kk 
+      ln -sf /usr/local/bin/kk /usr/bin/kk
+      kk version
+      mkdir -p ~/kubekey
+      cd ~/kubekey
+      kk create config
+    register: installkk
+    when: 1 != 1
+
+  - name: copy config file from manager to server
+    template: src=cluster-config.yaml dest=/root/kubekey/cluster-config.yaml
+
+  - name: create cluster
+    shell: yes | kk create cluster -f cluster-config.yaml
+    register: createresult
+
+  - name: check cluster
+    shell: |
+      kubectl cluster-info
+      kubectl get nodes
+      kubectl get pod -A
+      kubectl get all -A
+    # register: kubectl-result
+
+  - debug: msg="{{installkk.stdout}}"
+  - debug: msg="{{installkk.stderr}}"
+  # - debug: msg="{{kubectl-result.stdout}}"
+  # - debug: msg="{{kubectl-result.stderr}}"
+  - debug: msg="{{createresult.stdout}}"
+  - debug: msg="{{createresult.stderr}}"
+
+#  1  curl -sfL https://get-kk.kubesphere.io | VERSION=v3.0.2 sh -
+#     2  mv kk /usr/local/bin/
+#     3  kk --version
+#     4  kk create config
+#     5  ll
+#  X  6  vim config-sample.yaml 
+#  X  7  dnf install vim -y
+#  X  8  vim test
+#  X  9  vim config-sample.yaml 
+#    10  kk create cluster -f config-sample.yaml
+#    11  kubectl get nodes
+#    12  kubectl get pod -A
+#    13  kubectl get all -A

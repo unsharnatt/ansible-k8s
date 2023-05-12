@@ -1,0 +1,75 @@
+---
+# ansible-playbook -i ./hosts  deploy-k8s-playbook.yml --extra-vars "my_hosts=ip.of.master.node"
+- name: test playbook
+#  hosts: 192.168.121.155
+  hosts: "{{my_hosts}}"
+  remote_user: vagrant
+  # root access
+  become: yes  
+
+  #vars:
+#    service_port: 8080
+#    log_path: "/var/log" 
+
+  vars_files:
+  - vars_ansiblefile.yml
+
+  tasks:
+  - name: Update Red Hat Linux
+    yum:
+      name: "*"
+      state: latest
+      update_cache: yes
+    # when: ansible_os_family == "RedHat"
+    
+  # - name: add repo
+  #   command: curl -o /etc/yum.repos.d/konimex-neofetch-epel-7.repo https://copr.fedorainfracloud.org/coprs/konimex/neofetch/repo/epel-7/konimex-neofetch-epel-7.repo
+
+  - name: install by yum
+    yum: name=socat state=latest
+  
+  - name: add containerd.conf 
+    shell: |
+      tee /etc/modules-load.d/containerd.conf <<EOF
+      overlay
+      br_netfilter
+      EOF
+
+  # - name: install by yum
+  #   yum: name=neofetch state=latest
+
+  # - name: check
+  #   command: neofetch
+
+  # - name: create log file
+  #   file: path={{log_path}}/app.log state=touch owner=vagrant group=vagrant mode=0775
+
+  - name: Copy the bootstrap file from host to server
+    copy: bootstrap.sh dest=/root/
+    when: ansible_os_family == "RedHat"
+
+  - name: copy kubesphere-config file from host to server
+    template: src=kubesphere-config.yml dest=/root/kubesphere-config.yml
+    notify: disable firewall service
+
+  # - name: Fetch the file from the server to host
+  #   run_once: yes
+  #   fetch: src=/root/kubesphere-config.yml dest=tmp/ flat=yes
+    # when: "{{ inventory_hostname == '192.168.121.100' }}"
+
+  - name: run ls to check having of the copy files
+    command: ls -lthar
+
+  # - name: run boostrap
+  #   command: /root/boostrap.sh
+
+
+#  - name: disable firewall service
+#    service: name=firewalld state=stoped enable=no
+
+  handlers:
+  - name: disable firewall service
+    service: name=firewalld state=stopped enabled=no
+#    service: name=someservice state=restarted
+
+---
