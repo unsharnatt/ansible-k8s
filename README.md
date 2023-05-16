@@ -69,6 +69,10 @@ ansible-playbook -i hosts 01_prepare-servers-playbook.yml --extra-vars "my_hosts
 ansible-playbook -i hosts 02_create-cluster-playbook.yml --extra-vars "my_hosts=localhost"
 
 ```
+   - check:
+```
+ansible-playbook -i hosts 02_create-cluster-playbook.yml --extra-vars "my_hosts=localhost" --tags "check"
+```
    - test at master node :
 ```
 kubectl create deployment web --image=gcr.io/google-samples/hello-app:1.0
@@ -106,7 +110,7 @@ curl http://<node-ip>:<node-port>
 
 5. delete node from cluster 
 ```
-ansible-playbook -i hosts 05_delete-node-from-cluster.yaml --extra-vars "my_hosts=localhost"
+ansible-playbook -i hosts 05_delete-node-from-cluster.yaml --extra-vars "my_hosts=localhost node_name=kworker2"
 ```
 
 6. delete cluster 

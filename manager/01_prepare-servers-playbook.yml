@@ -6,43 +6,8 @@
   # root access
   become: yes  
 
-  #vars:
-#    service_port: 8080
-#    log_path: "/var/log" 
-
-  # vars_files:
-  # - vars_ansiblefile.yml
 
   tasks:
     - include: 99_prepare-servers-playbook.yml
   
-
-#     1  curl -sfL https://get-kk.kubesphere.io | VERSION=v3.0.2 sh -
-#     2  mv kk /usr/local/bin/
-#     3  kk --version
-#     4  kk create config
-#     5  ll
-#     6  vim config-sample.yaml 
-#     7  dnf install vim -y
-#     8  vim test
-#     9  vim config-sample.yaml 
-#    10  kk create cluster -f config-sample.yaml
-#    11  kubectl get nodes
-#    12  kubectl get pod -A
-#    13  kubectl get all -A      
-  
-# yum install -y yum-utils device-mapper-persistent-data lvm2 >/dev/null 2>&1
-
-# Add Docker repo: yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
-
-# Install containerd : yum update -y && yum install -y containerd.io >/dev/null 2>&1
-
-# Configure containerd and start service
-# mkdir -p /etc/containerd
-# containerd config default > /etc/containerd/config.toml
-
-# restart containerd
-# systemctl restart containerd
-# systemctl enable containerd
-
   

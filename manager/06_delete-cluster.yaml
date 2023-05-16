@@ -8,46 +8,14 @@
   # root access
   become: yes  
 
-  #vars:
-#    service_port: 8080
-#    log_path: "/var/log" 
-
-  # vars_files:
-  # - vars_ansiblefile.yml
 
   tasks:
-    
-  # - name: Update Red Hat Linux
-  #   yum:
-  #     name: "*"
-  #     state: latest
-  #     update_cache: yes
-  #   # when: ansible_os_family == "RedHat"
-
-  # - name: download kubekey 
-  #   shell: curl -sfL https://get-kk.kubesphere.io | VERSION=v3.0.2 sh -
-  #   # when: 1 != 1
-
-  # - name: install kubekey
-  #   shell: |
-  #     id
-  #     mv kk /usr/local/bin/
-  #     chmod +x /usr/local/bin/kk 
-  #     ln -sf /usr/local/bin/kk /usr/bin/kk
-  #     kk version
-  #     mkdir -p ~/kubekey
-  #     cd ~/kubekey
-  #     kk create config
-  #   register: installkk
-  #   # when: 1 != 1
-
   - name: copy config file from manager to server
     template: src=cluster-config-v2.yaml dest=/root/kubekey/cluster-config-v2.yaml
 
   - name: delete cluster
-    shell: yes| kk delete cluster -f cluster-config-v2.yaml
+    shell: yes| kk delete cluster -f /root/kubekey/cluster-config-v2.yaml
     register: result
 
   - debug: msg="{{result.stdout}}"
   - debug: msg="{{result.stderr}}"
-
