@@ -1,0 +1,77 @@
+---
+- name: 02 create cluster playbook
+# run at manager
+  hosts: "{{my_hosts}}"
+  remote_user: root
+  # root access
+  become: yes  
+
+  #vars:
+#    service_port: 8080
+#    log_path: "/var/log" 
+
+  # vars_files:
+  # - vars_ansiblefile.yml
+
+  tasks:
+  - name: Update Red Hat Linux
+    yum:
+      name: "*"
+      state: latest
+      update_cache: yes
+    # when: ansible_os_family == "RedHat"
+
+  - name: download kubekey 
+    shell: curl -sfL https://get-kk.kubesphere.io | VERSION=v3.0.2 sh -
+    when: 1 != 1
+
+  - name: install kubekey
+    shell: |
+      id
+      mv kk /usr/local/bin/
+      chmod +x /usr/local/bin/kk 
+      ln -sf /usr/local/bin/kk /usr/bin/kk
+      kk version
+      mkdir -p ~/kubekey
+      cd ~/kubekey
+      kk version
+    register: installkk
+    when: 1 != 1
+
+  # - debug: msg="{{installkk.stdout}}"
+  # - debug: msg="{{installkk.stderr}}"
+
+  - name: copy config file from manager to server
+    template: src=cluster-config-v1.yaml dest=/root/kubekey/cluster-config-v1.yaml
+    when: 1 != 1
+
+  - name: create cluster
+    shell: |
+      id
+      pwd
+      cd /root/kubekey
+      yes| kk create cluster -f /root/kubekey/cluster-config-v1.yaml
+    when: 1 != 1
+    register: createresult
+
+  # - debug: msg="{{createresult.stdout}}"
+  # - debug: msg="{{createresult.stderr}}"
+
+- name: 02 check cluster playbook
+# run in kmaster
+  hosts: "kmaster"
+  remote_user: root
+  become: yes  
+
+  tasks:
+  - name: check cluster
+    shell: |
+      kubectl cluster-info
+      kubectl get nodes -o wide
+      kubectl get pod -A -o wide
+      kubectl get all -A -o wide
+    register: kubectl_result
+
+  - debug: msg="{{kubectl_result.stdout}}"
+  - debug: msg="{{kubectl_result.stderr}}"
+

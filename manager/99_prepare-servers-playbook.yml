@@ -1,20 +1,4 @@
 ---
-# ansible-playbook -i ./hosts  deploy-k8s-playbook.yml --extra-vars "my_hosts=ip.of.master.node"
-- name: test01 playbook
-#  hosts: 192.168.121.155
-  hosts: "{{my_hosts}}"
-  remote_user: root
-  # root access
-  become: yes  
-
-  #vars:
-#    service_port: 8080
-#    log_path: "/var/log" 
-
-  # vars_files:
-  # - vars_ansiblefile.yml
-
-  tasks:
   - name: Update Red Hat Linux
     yum:
       name: "*"
@@ -70,7 +54,7 @@
   - name: Add Docker repo
     shell: yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
 
-an
+
   - name: Install Containerd
     yum:
       name: containerd.io

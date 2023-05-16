@@ -1,0 +1,12 @@
+---
+- name: 03 prepare more server playbook
+# worker node
+  hosts: "{{my_hosts}}"
+  remote_user: root
+  # root access
+  become: yes  
+
+
+  tasks:
+    - include: 99_prepare-servers-playbook.yml
+  
